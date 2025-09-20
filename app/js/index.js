@@ -2242,6 +2242,7 @@ function runStep4(asyncCallback) {
             const usedColors = Object.keys(pieceCountsForTable);
             usedColors.sort();
             usedColors.forEach((keyString) => {
+                 if (pieceCountsForTable[keyString] <= 0) return;//linea añadida PABLO
                 const pieceKey = keyString.split("_");
                 const color = pieceKey[0];
                 const studRow = document.createElement("tr");
