@@ -2433,9 +2433,9 @@ async function generateInstructions() {
         const imgData = titlePageCanvas.toDataURL("image/png", 1.0);
 
         let pdf = new jsPDF({
-            orientation: titlePageCanvas.width < titlePageCanvas.height ? "p" : "l",
+            orientation: "landscape",
             unit: "mm",
-            format: [titlePageCanvas.width, titlePageCanvas.height],
+            format: "a4",
         });
 
         const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -2459,9 +2459,9 @@ async function generateInstructions() {
                 pdf.save(`Lego-Art-Remix-Instructions-Part-${numParts}.pdf`);
                 numParts++;
                 pdf = new jsPDF({
-                    orientation: titlePageCanvas.width < titlePageCanvas.height ? "p" : "l",
+                    orientation: "landscape",
                     unit: "mm",
-                    format: [titlePageCanvas.width, titlePageCanvas.height],
+                    format: "a4",
                 });
             } else {
                 pdf.addPage();

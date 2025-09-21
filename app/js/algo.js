@@ -981,11 +981,15 @@ function drawStudCountForContext(
 ) {
     const radius = scalingFactor / 2;
     ctx.font = `${scalingFactor / 2}px Arial`;
+    const maxRows = 10;
+    const colWidth = radius * 11;
     availableStudHexList.forEach((pixelHex, i) => {
         const number = i + 1;
+        const col = Math.floor(i / maxRows);
+        const row = i % maxRows;
         ctx.beginPath();
-        const x = horizontalOffset;
-        const y = verticalOffset + radius * 2.5 * number;
+        const x = radius * 2 + col * colWidth;
+        const y = verticalOffset + radius * 2.5 * (row + 1);
         drawPixel(
             ctx,
             x - radius,
@@ -1006,16 +1010,20 @@ function drawStudCountForContext(
         ctx.font = `${scalingFactor / 2}px Arial`;
     });
 
-    ctx.lineWidth = 5;
-    ctx.strokeStyle = "#000000";
-    ctx.beginPath();
-    ctx.rect(
-        horizontalOffset - radius * 2,
-        verticalOffset + radius * 0.75,
-        radius * 11,
-        radius * 2.5 * (availableStudHexList.length + 0.5)
-    );
-    ctx.stroke();
+    // Dibujar el borde para cada columna
+    const numCols = Math.ceil(availableStudHexList.length / maxRows);
+    for (let col = 0; col < numCols; col++) {
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "#000000";
+        ctx.beginPath();
+        ctx.rect(
+            radius * 2 + col * colWidth - radius * 2,
+            verticalOffset + radius * 0.75,
+            colWidth,
+            radius * 2.5 * (Math.min(maxRows, availableStudHexList.length - col * maxRows) + 0.5)
+        );
+        ctx.stroke();
+    }
 }
 
 function generateInstructionTitlePage(
@@ -1037,33 +1045,38 @@ function generateInstructionTitlePage(
 
     const studMap = getUsedPixelsStudMap(pixelArray);
 
-    canvas.height = Math.max(pictureHeight * 1.5, pictureHeight * 0.4 + availableStudHexList.length * radius * 2.5);
-    canvas.width = pictureWidth * 2;
+    // A4 landscape: 297mm x 210mm, jsPDF uses 1px ≈ 0.75pt, so use 1122x793 px for canvas
+    canvas.width = 1122;
+    canvas.height = 793;
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Centrar la leyenda y el título en el área A4, pero más abajo/derecha
+    const offsetX = canvas.width * (2/3) - pictureWidth / 2 + scalingFactor * 3;
+    const offsetY = (canvas.height - pictureHeight) / 2 + scalingFactor * 3;
 
     drawStudCountForContext(
         studMap,
         availableStudHexList,
         scalingFactor,
         ctx,
-        pictureWidth * 0.25,
-        pictureHeight * 0.2 - radius,
+        offsetX,
+        offsetY - radius * 2,
         pixelType
     );
 
     ctx.fillStyle = "#000000";
     ctx.font = `${scalingFactor * 2}px Arial`;
-    ctx.fillText("Lego Art Remix", pictureWidth * 0.75, pictureHeight * 0.28);
+    ctx.fillText("Lego Art Remix", offsetX, offsetY - scalingFactor * 2.5);
     ctx.font = `${scalingFactor / 2}px Arial`;
     ctx.fillText(
         `Resolution: ${width} x ${pixelArray.length / (4 * width)}`,
-        pictureWidth * 0.75,
-        pictureHeight * 0.34
+        offsetX,
+        offsetY - scalingFactor * 1.5
     );
 
-    const legendHorizontalOffset = pictureWidth * 0.75;
-    const legendVerticalOffset = pictureHeight * 0.41;
+    const legendHorizontalOffset = offsetX;
+    const legendVerticalOffset = offsetY + scalingFactor * 2;
     const numPlates = pixelArray.length / (4 * plateWidth * plateWidth);
     const legendSquareSide = scalingFactor;
 
@@ -1122,23 +1135,29 @@ function generateInstructionPage(
 
     const studMap = getUsedPixelsStudMap(pixelArray);
 
-    canvas.height = Math.max(pictureHeight * 1.5, pictureHeight * 0.4 + availableStudHexList.length * radius * 2.5);
-    canvas.width = pictureWidth * 2;
+    // Canvas A4 landscape
+    const canvasWidth = 1122;
+    const canvasHeight = 793;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // Posicionar cuadrícula a 2/3 en X y más abajo/derecha
+    const gridOffsetX = canvasWidth * (2/3) - pictureWidth / 2 + scalingFactor * 3;
+    const gridOffsetY = (canvasHeight - pictureHeight) / 2 + scalingFactor * 3;
     ctx.lineWidth = 5;
     ctx.beginPath();
-    ctx.rect(pictureWidth * 0.75, pictureHeight * 0.2, pictureWidth, pictureHeight);
+    ctx.rect(gridOffsetX, gridOffsetY, pictureWidth, pictureHeight);
     ctx.stroke();
     ctx.fillStyle = "#000000";
-    ctx.fillRect(pictureWidth * 0.75, pictureHeight * 0.2, pictureWidth, pictureHeight);
+    ctx.fillRect(gridOffsetX, gridOffsetY, pictureWidth, pictureHeight);
 
     ctx.lineWidth = 5;
     ctx.strokeStyle = "#000000";
     ctx.font = `${scalingFactor}px Arial`;
     ctx.beginPath();
-    ctx.fillText(`Section ${plateNumber}`, pictureWidth * 0.75, pictureHeight * 0.2 - scalingFactor);
+    ctx.fillText(`Section ${plateNumber}`, gridOffsetX, gridOffsetY - scalingFactor);
     ctx.stroke();
 
     ctx.lineWidth = 1;
@@ -1159,8 +1178,9 @@ function generateInstructionPage(
                 pixelArray[pixelIndex * 4 + 2]
             );
             ctx.beginPath();
-            const x = pictureWidth * 0.75 + (j * 2 + 1) * radius;
-            const y = pictureHeight * 0.2 + ((i % plateWidth) * 2 + 1) * radius;
+            // Mover los studs a la misma posición desplazada
+            const x = gridOffsetX + (j * 2 + 1) * radius;
+            const y = gridOffsetY + ((i % plateWidth) * 2 + 1) * radius;
             drawPixel(
                 ctx,
                 x - radius,
@@ -1182,8 +1202,8 @@ function generateInstructionPage(
     if (variablePixelPieceDimensions != null) {
         for (let i = 0; i < plateWidth; i++) {
             for (let j = 0; j < plateWidth; j++) {
-                const x = pictureWidth * 0.75 + (j * 2 + 1) * radius;
-                const y = pictureHeight * 0.2 + ((i % plateWidth) * 2 + 1) * radius;
+                const x = gridOffsetX + (j * 2 + 1) * radius;
+                const y = gridOffsetY + ((i % plateWidth) * 2 + 1) * radius;
                 const piece = variablePixelPieceDimensions[i][j];
                 if (piece != null) {
                     ctx.strokeStyle = "#888888";
