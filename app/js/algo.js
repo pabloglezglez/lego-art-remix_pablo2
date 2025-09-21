@@ -988,11 +988,12 @@ function drawStudCountForContext(
         .map((pixelHex, i) => ({ pixelHex, number: i + 1 }))
         .filter(({ pixelHex }) => (studMap[pixelHex] || 0) > 0);
 
+    const studMapOffsetX = scalingFactor * 2; // desplazamiento hacia la derecha
     studsWithNumber.forEach(({ pixelHex, number }, i) => {
         const col = Math.floor(i / maxRows);
         const row = i % maxRows;
         ctx.beginPath();
-        const x = radius * 2 + col * colWidth;
+        const x = radius * 2 + col * colWidth + studMapOffsetX;
         const y = verticalOffset + radius * 2.5 * (row + 1);
         drawPixel(
             ctx,
@@ -1017,11 +1018,11 @@ function drawStudCountForContext(
     // Dibujar el borde para cada columna
     const numCols = Math.ceil(studsWithNumber.length / maxRows);
     for (let col = 0; col < numCols; col++) {
-        ctx.lineWidth = 5;
+        ctx.lineWidth = 2;
         ctx.strokeStyle = "#000000";
         ctx.beginPath();
         ctx.rect(
-            radius * 2 + col * colWidth - radius * 2,
+            radius * 2 + col * colWidth - radius * 2 + studMapOffsetX,
             verticalOffset + radius * 0.75,
             colWidth,
             radius * 2.5 * (Math.min(maxRows, studsWithNumber.length - col * maxRows) + 0.5)
@@ -1042,8 +1043,10 @@ function generateInstructionTitlePage(
 ) {
     const ctx = canvas.getContext("2d");
 
-    pictureWidth = plateWidth * scalingFactor;
-    pictureHeight = plateWidth * scalingFactor;
+    // Reducir el tamaño de la cuadrícula y mosaico en la página de inicio
+    const scaleDown = 0.7; // factor de reducción
+    pictureWidth = plateWidth * scalingFactor * scaleDown;
+    pictureHeight = plateWidth * scalingFactor * scaleDown;
 
     const radius = scalingFactor / 2;
 
@@ -1059,30 +1062,40 @@ function generateInstructionTitlePage(
     const offsetX = canvas.width * (2/3) - pictureWidth / 2 + scalingFactor * 3;
     const offsetY = (canvas.height - pictureHeight) / 2 + scalingFactor * 3;
 
+    // Centrar verticalmente el stud map en la página de título
+    const studMapRows = Math.min(10, availableStudHexList.length);
+    const studMapCols = Math.ceil(availableStudHexList.length / 10);
+    const studMapHeight = scalingFactor / 2 * 2.5 * (studMapRows + 0.5);
+    const studMapVerticalOffset = (canvas.height - studMapHeight) / 2;
     drawStudCountForContext(
         studMap,
         availableStudHexList,
         scalingFactor,
         ctx,
         offsetX,
-        offsetY - radius * 2,
+        studMapVerticalOffset,
         pixelType
     );
 
     ctx.fillStyle = "#000000";
     ctx.font = `${scalingFactor * 2}px Arial`;
-    ctx.fillText("Lego Art Remix", offsetX, offsetY - scalingFactor * 2.5);
+    // Título centrado en la parte superior
+    ctx.textAlign = "center";
+    ctx.fillText("Lego Art Remix", canvas.width / 2, scalingFactor * 2);
+    ctx.textAlign = "start";
     ctx.font = `${scalingFactor / 2}px Arial`;
+    ctx.textAlign = "center";
     ctx.fillText(
         `Resolution: ${width} x ${pixelArray.length / (4 * width)}`,
-        offsetX,
-        offsetY - scalingFactor * 1.5
+        canvas.width / 2,
+        scalingFactor * 3.2
     );
+    ctx.textAlign = "start";
 
     const legendHorizontalOffset = offsetX;
     const legendVerticalOffset = offsetY + scalingFactor * 2;
     const numPlates = pixelArray.length / (4 * plateWidth * plateWidth);
-    const legendSquareSide = scalingFactor;
+    const legendSquareSide = scalingFactor * scaleDown;
 
     ctx.drawImage(
         finalImageCanvas,
@@ -1092,11 +1105,11 @@ function generateInstructionTitlePage(
         finalImageCanvas.height,
         legendHorizontalOffset + legendSquareSide / 4 + (legendSquareSide * width) / plateWidth,
         legendVerticalOffset,
-        (legendSquareSide * width) / plateWidth,
-        legendSquareSide * ((numPlates * plateWidth) / width)
+        (legendSquareSide * width) / plateWidth * scaleDown,
+        legendSquareSide * ((numPlates * plateWidth) / width) * scaleDown
     );
 
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 2;
     ctx.strokeStyle = "#000000";
     ctx.font = `${legendSquareSide / 2}px Arial`;
 
@@ -1147,9 +1160,9 @@ function generateInstructionPage(
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Posicionar cuadrícula a 2/3 en X y más abajo/derecha
+    // Posicionar cuadrícula a 2/3 en X y centrada verticalmente
     const gridOffsetX = canvasWidth * (2/3) - pictureWidth / 2 + scalingFactor * 3;
-    const gridOffsetY = (canvasHeight - pictureHeight) / 2 + scalingFactor * 3;
+    const gridOffsetY = (canvasHeight - pictureHeight) / 2;
     ctx.lineWidth = 5;
     ctx.beginPath();
     ctx.rect(gridOffsetX, gridOffsetY, pictureWidth, pictureHeight);
@@ -1161,7 +1174,7 @@ function generateInstructionPage(
     ctx.strokeStyle = "#000000";
     ctx.font = `${scalingFactor}px Arial`;
     ctx.beginPath();
-    ctx.fillText(`Section ${plateNumber}`, gridOffsetX, gridOffsetY - scalingFactor);
+    ctx.fillText(`Sección ${plateNumber}`, gridOffsetX, gridOffsetY - scalingFactor);
     ctx.stroke();
 
     ctx.lineWidth = 1;
