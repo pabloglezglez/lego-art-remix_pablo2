@@ -983,8 +983,12 @@ function drawStudCountForContext(
     ctx.font = `${scalingFactor / 2}px Arial`;
     const maxRows = 10;
     const colWidth = radius * 11;
-    availableStudHexList.forEach((pixelHex, i) => {
-        const number = i + 1;
+    // Generar array de studs con cantidad > 0 y su número original
+    const studsWithNumber = availableStudHexList
+        .map((pixelHex, i) => ({ pixelHex, number: i + 1 }))
+        .filter(({ pixelHex }) => (studMap[pixelHex] || 0) > 0);
+
+    studsWithNumber.forEach(({ pixelHex, number }, i) => {
         const col = Math.floor(i / maxRows);
         const row = i % maxRows;
         ctx.beginPath();
@@ -1011,7 +1015,7 @@ function drawStudCountForContext(
     });
 
     // Dibujar el borde para cada columna
-    const numCols = Math.ceil(availableStudHexList.length / maxRows);
+    const numCols = Math.ceil(studsWithNumber.length / maxRows);
     for (let col = 0; col < numCols; col++) {
         ctx.lineWidth = 5;
         ctx.strokeStyle = "#000000";
@@ -1020,7 +1024,7 @@ function drawStudCountForContext(
             radius * 2 + col * colWidth - radius * 2,
             verticalOffset + radius * 0.75,
             colWidth,
-            radius * 2.5 * (Math.min(maxRows, availableStudHexList.length - col * maxRows) + 0.5)
+            radius * 2.5 * (Math.min(maxRows, studsWithNumber.length - col * maxRows) + 0.5)
         );
         ctx.stroke();
     }
